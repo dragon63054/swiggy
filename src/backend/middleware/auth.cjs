@@ -1,0 +1,33 @@
+const jwt = require('jsonwebtoken');
+const secret = process.env.JWT_SECRET;
+
+function verifyUser(req, res, next) {
+  const token = req.header('Authorization');
+  if (!token) return res.status(401).json({ error: 'Token missing' });
+
+  try {
+    const decoded = jwt.verify(token, secret);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(400).json({ error: 'Invalid token' });
+  }
+}
+
+function verifyAdmin(req, res, next) {
+  const token = req.header('Authorization');
+  if (!token) return res.status(401).json({ error: 'Token missing' });
+
+  try {
+    const decoded = jwt.verify(token, secret);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(400).json({ error: 'Invalid token' });
+  }
+}
+
+module.exports = { verifyUser, verifyAdmin };
