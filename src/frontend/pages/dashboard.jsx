@@ -235,13 +235,13 @@
 // export default Dashboard;
 
 
+// DASHBOARD FRONTEND COMPONENT (React)
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./header";
 import Footer from "./footer";
 
 function Dashboard() {
-  const [restaurants, setRestaurants] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -252,43 +252,48 @@ function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.role === "admin";
 
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMenuItems = async () => {
       try {
-        const res1 = await fetch("http://localhost:3001/restaurant/restaurant-list");
-        const restaurantData = await res1.json();
-        setRestaurants(restaurantData);
-  
-        const uniqueCategories = ["All", ...new Set(restaurantData.map(r => r.restaurant_type))];
-        setCategories(uniqueCategories);
-  
-        const res2 = await fetch("http://localhost:3001/restaurant/restaurants-menu");
-        const menuData = await res2.json();
-  
-        const formatted = menuData.map((item) => {
-          const restaurant = restaurantData.find(r => r.id === item.restaurant_id);
+        const res = await fetch("http://localhost:3001/restaurant/restaurant-menu");
+
+        const data = await res.json();
+
+        const formatted = data.map((item) => {
+          const restaurantName = item.restaurant_name || item.Restaurant_Name;
+          const itemName = item.item_name || item.Item_Name;
+          const id = `${restaurantName}-${itemName}`.replace(/\s+/g, "-").toLowerCase();
+
           return {
-            ...item,
-            id: `${item.restaurant_id}-${item.Item_Name}`.replace(/\s+/g, "-").toLowerCase(),
-            itemName: item.Item_Name,
-            restaurantName: restaurant?.restaurant_name || "",
-            restaurantType: restaurant?.restaurant_type || "",
-            hasOffer: !!item.offer,
-            imageUrl: item.image_url // Ensure backend sends proper image_url
+            id,
+            restaurantName,
+            itemName,
+            description: item.description,
+            rating: item.rating,
+            price: item.price,
+            offer: item.offer,
+            offerPrice: item.offer_price,
+            imageUrl: item.image_url,
+            restaurantType: item.restaurant_type,
+            hasOffer: item.offer != null,
           };
         });
-  
+
         setMenuItems(formatted);
         setFilteredItems(formatted);
+
+        const uniqueCategories = [
+          "All",
+          ...new Set(formatted.map((item) => item.restaurantType)),
+        ];
+        setCategories(uniqueCategories);
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching menu items:", err);
       }
     };
-  
-    fetchData();
+
+    fetchMenuItems();
   }, []);
-  
 
   const handleSearch = (query) => {
     let items = showOffersOnly
@@ -301,9 +306,10 @@ function Dashboard() {
 
     const filtered = query
       ? items.filter((item) =>
-          item.itemName.toLowerCase().includes(query.toLowerCase()) ||
-          item.restaurantName.toLowerCase().includes(query.toLowerCase()) ||
-          item.description?.toLowerCase().includes(query.toLowerCase())
+          (item.itemName?.toLowerCase() || "").includes(query.toLowerCase()) ||
+          (item.restaurantName?.toLowerCase() || "").includes(query.toLowerCase()) ||
+          (item.description?.toLowerCase() || "").includes(query.toLowerCase()) ||
+          (item.price?.toString().toLowerCase() || "").includes(query.toLowerCase())
         )
       : items;
 
@@ -330,11 +336,8 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    if (showOffersOnly) {
-      handleOffersClick();
-    } else {
-      handleCategoryClick(selectedCategory);
-    }
+    if (showOffersOnly) handleOffersClick();
+    else handleCategoryClick(selectedCategory);
   }, [menuItems]);
 
   return (
@@ -430,7 +433,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-
-
-
-
