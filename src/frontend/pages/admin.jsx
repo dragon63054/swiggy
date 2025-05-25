@@ -25,7 +25,7 @@ function Admin() {
 
   const fetchMenu = async () => {
     try {
-      const res = await fetch("http://localhost:3001/restaurant/restaurant-menu-items", {
+      const res = await fetch("http://localhost:3000/restaurant/restaurant-menu-items", {
         headers: { Authorization: token },
       });
       const data = await res.json();
@@ -38,8 +38,8 @@ function Admin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const endpoint = editId
-      ? `http://localhost:3001/restaurant/restaurant-menu-items/${editId}`
-      : "http://localhost:3001/restaurant/restaurant-menu-items";
+      ? `http://localhost:3000/restaurant/restaurant-menu-items/${editId}`
+      : "http://localhost:3000/restaurant/restaurant-menu-items";
 
     const method = editId ? "PUT" : "POST";
 
